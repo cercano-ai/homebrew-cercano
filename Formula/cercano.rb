@@ -1,43 +1,51 @@
+# Release template, not a publishable formula until all placeholders are filled.
+# Use a signed/notarized two-binary archive that includes restart-after-upgrade.
 class Cercano < Formula
   desc "AI-powered development tool with local/cloud model routing"
-  homepage "https://github.com/bryancostanich/Cercano"
-  version "0.9.3"
+  homepage "https://github.com/cercano-ai/Cercano"
+  url "https://github.com/cercano-ai/Cercano/releases/download/v0.20.3/cercano-0.20.3-darwin-arm64.tar.gz"
+  version "0.20.3"
+  sha256 "ad8967c18bc487ebbd5265b20c2ff734492ee1242429dfc8f47d1f3d74b3c2aa"
   license "MIT"
 
-  on_macos do
-    if Hardware::CPU.arm?
-      url "https://github.com/bryancostanich/Cercano/releases/download/v#{version}/cercano-darwin-arm64"
-      sha256 "10d87886d601a3b32c622d3bef4b9e65604577be0cc56e8e3a4979112bf53f87"
-    else
-      url "https://github.com/bryancostanich/Cercano/releases/download/v#{version}/cercano-darwin-amd64"
-      sha256 "7b5eedfdf9f651b3b531c6cff566dc41be6e0fcf278fd6ce0b01e8eb9549af28"
-    end
-  end
-
-  on_linux do
-    url "https://github.com/bryancostanich/Cercano/releases/download/v#{version}/cercano-linux-amd64"
-    sha256 "e08809c34f43f897bb7d4b2997dd679fd857021e5c22d5d670f59d99fd579dca"
-  end
+  # Monterey is macOS 12, the deployment target the binaries are built against.
+  # Homebrew refuses installation on older systems and on Intel rather than
+  # letting a user install binaries that cannot run.
+  depends_on macos: :monterey
+  depends_on arch: :arm64
 
   def install
-    binary = Dir.glob("cercano-*").first || "cercano"
-    bin.install binary => "cercano"
+    bin.install "bin/cercano", "bin/cercano-cli"
+  end
+
+  # Homebrew invokes this after installing/linking the new keg. Never restart
+  # from install itself: a download/unpack/install failure must leave the old
+  # agent alone. The coordinator is a no-op when no owned agent is running.
+  def post_install
+    system bin/"cercano", "restart-after-upgrade"
   end
 
   def caveats
     <<~EOS
-      Cercano requires Ollama for local AI inference.
-      Install it from https://ollama.com/ then run:
-
-        cercano setup
-
-      To use with Claude Code:
-
-        claude mcp add cercano -- cercano --mcp
+      Start the terminal client with cercano-cli.
+      A successful upgrade restarts an existing agent after draining work.
+      An absent agent is not started by installation or upgrade.
+      If post-install restart fails, inspect the reported error and agent logs.
+      Retry with: #{bin}/cercano restart-after-upgrade
+      Manual restart from an attached client: /restart-agent
     EOS
   end
 
+  # Runs with no credentials, no model downloads and no network, so every
+  # command here must work offline. Each binary prints its own name, verified
+  # against real builds.
+  #
+  # Deliberately does NOT invoke `restart-after-upgrade` without --help: that
+  # command acts on a running agent, and `brew test` must not restart the
+  # user's agent as a side effect.
   test do
-    assert_match "cercano v", shell_output("#{bin}/cercano --version")
+    assert_match "cercano v#{version}", shell_output("#{bin}/cercano --version")
+    assert_match "cercano-cli v#{version}", shell_output("#{bin}/cercano-cli --version")
+    assert_match "Usage:", shell_output("#{bin}/cercano restart-after-upgrade --help")
   end
 end
