@@ -3,9 +3,9 @@
 class Cercano < Formula
   desc "AI-powered development tool with local/cloud model routing"
   homepage "https://github.com/cercano-ai/Cercano"
-  url "https://github.com/cercano-ai/Cercano/releases/download/v0.22.0/cercano-0.22.0-darwin-arm64.tar.gz"
-  version "0.22.0"
-  sha256 "44e532996ce64c3c62dadc7f0951cc0d2f28df722567a0802ed861f2461be5b9"
+  url "https://github.com/cercano-ai/Cercano/releases/download/v0.23.1/cercano-0.23.1-darwin-arm64.tar.gz"
+  version "0.23.1"
+  sha256 "6acad4ef603bf2d5ab9df52a60991452a5dc99119f19a03710177e0efd9c7d4e"
   license "MIT"
 
   # Monterey is macOS 12, the deployment target the binaries are built against.
